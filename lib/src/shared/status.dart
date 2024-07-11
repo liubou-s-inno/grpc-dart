@@ -425,7 +425,7 @@ void validateHttpStatusAndContentType(
     // and use this information to report a better error to the application
     // layer. However prefer to use status code derived from HTTP status
     // if grpc-status itself does not provide an informative error.
-    final error = grpcErrorDetailsFromTrailers(headers);
+    final error = grpcErrorDetailsFromHeaders(headers);
     if (error == null || error.code == StatusCode.unknown) {
       throw GrpcError.custom(
         status,
@@ -451,13 +451,13 @@ void validateHttpStatusAndContentType(
   }
 }
 
-GrpcError? grpcErrorDetailsFromTrailers(Map<String, String> trailers) {
-  final status = trailers['grpc-status'];
-  final statusCode = status != null ? int.parse(status) : StatusCode.unknown;
+GrpcError? grpcErrorDetailsFromHeaders(Map<String, String> headers) {
+  final status = headers['grpc-status'];
+  final statusCode = status != null ? int.parse(status) : StatusCode.ok;
 
   if (statusCode != StatusCode.ok) {
-    final message = _tryDecodeStatusMessage(trailers['grpc-message']);
-    final statusDetails = trailers[_statusDetailsHeader];
+    final message = _tryDecodeStatusMessage(headers['grpc-message']);
+    final statusDetails = headers[_statusDetailsHeader];
     return GrpcError.custom(
       statusCode,
       message,
@@ -465,7 +465,7 @@ GrpcError? grpcErrorDetailsFromTrailers(Map<String, String> trailers) {
           ? const <GeneratedMessage>[]
           : decodeStatusDetails(statusDetails),
       null,
-      toCustomTrailers(trailers),
+      toCustomTrailers(headers),
     );
   }
 
